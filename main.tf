@@ -1,3 +1,10 @@
+locals {
+  count_pri_subnet = 3
+  count_pub_subnet = 3
+  private_cidr     = [for i in range(1, 100, 1) : cidrsubnet("10.0.0.0/16", 8, i)]
+  public_cidr      = [for i in range(101, 200, 1) : cidrsubnet("10.0.0.0/16", 8, i)]
+}
+
 resource "aws_vpc" "myvpc" {
   cidr_block       = "10.0.0.0/16"
   instance_tenancy = "default"
@@ -8,61 +15,27 @@ resource "aws_vpc" "myvpc" {
 }
 
 
-resource "aws_subnet" "private01" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[0]
+resource "aws_subnet" "private" {
+  count                   = local.count_pri_subnet
+  vpc_id                  = aws_vpc.myvpc.id
+  map_public_ip_on_launch = false
+  cidr_block              = local.private_cidr[count.index]
+  availability_zone       = data.aws_availability_zones.zones.names[count.index]
 
   tags = {
-    Name = "private01"
-  }
-}
-resource "aws_subnet" "private02" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.2.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[1]
-
-  tags = {
-    Name = "private02"
-  }
-}
-resource "aws_subnet" "private03" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.3.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[2]
-
-  tags = {
-    Name = "private03"
+    Name = "private${count.index}"
   }
 }
 
-
-
-resource "aws_subnet" "public01" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.101.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[0]
-
-  tags = {
-    Name = "public01"
-  }
-}
-resource "aws_subnet" "public02" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.102.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[1]
+resource "aws_subnet" "public" {
+  count                   = local.count_pub_subnet
+  vpc_id                  = aws_vpc.myvpc.id
+  map_public_ip_on_launch = false
+  cidr_block              = local.public_cidr[count.index]
+  availability_zone       = data.aws_availability_zones.zones.names[count.index]
 
   tags = {
-    Name = "public02"
-  }
-}
-resource "aws_subnet" "public03" {
-  vpc_id     = aws_vpc.myvpc.id
-  cidr_block = "10.0.103.0/24"
-  availability_zone = data.aws_availability_zones.zones.names[2]
-
-  tags = {
-    Name = "public03"
+    Name = "public${count.index}"
   }
 }
 
@@ -76,17 +49,9 @@ resource "aws_route_table" "publicroutes" {
   }
 }
 
-resource "aws_route_table_association" "public-01" {
-  subnet_id      = aws_subnet.public01.id
-  route_table_id = aws_route_table.publicroutes.id
-}
-
-resource "aws_route_table_association" "public-02" {
-  subnet_id      = aws_subnet.public02.id
-  route_table_id = aws_route_table.publicroutes.id
-}
-resource "aws_route_table_association" "public-03" {
-  subnet_id      = aws_subnet.public03.id
+resource "aws_route_table_association" "public" {
+  count          = local.count_pub_subnet
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.publicroutes.id
 }
 
@@ -112,35 +77,27 @@ resource "aws_route_table" "privateroutes" {
 
 
 resource "aws_route_table_association" "private-01" {
-  subnet_id      = aws_subnet.private01.id
-  route_table_id = aws_route_table.privateroutes.id
-}
-
-resource "aws_route_table_association" "private-02" {
-  subnet_id      = aws_subnet.private02.id
-  route_table_id = aws_route_table.privateroutes.id
-}
-resource "aws_route_table_association" "private-03" {
-  subnet_id      = aws_subnet.private03.id
+  count          = local.count_pri_subnet
+  subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.privateroutes.id
 }
 
 
 resource "aws_route" "to-internetgateway" {
-  route_table_id              = aws_route_table.publicroutes.id
+  route_table_id         = aws_route_table.publicroutes.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id     = aws_internet_gateway.mygateway.id
+  gateway_id             = aws_internet_gateway.mygateway.id
 }
 
 resource "aws_route" "to-natgateway" {
-  route_table_id              = aws_route_table.privateroutes.id
+  route_table_id         = aws_route_table.privateroutes.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id     = aws_nat_gateway.mynatgateway.id
+  nat_gateway_id         = aws_nat_gateway.mynatgateway.id
 }
 
 resource "aws_nat_gateway" "mynatgateway" {
   allocation_id = aws_eip.lb.id
-  subnet_id     = aws_subnet.public01.id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
     Name = "gw NAT"
@@ -152,7 +109,7 @@ resource "aws_nat_gateway" "mynatgateway" {
 }
 
 resource "aws_eip" "lb" {
-  vpc      = true
+  vpc = true
 }
 
 

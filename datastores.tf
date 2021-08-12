@@ -5,6 +5,6 @@ data "aws_availability_zones" "zones" {
 
 output "zone-names" {
 
-    value = data.aws_availability_zones.zones
-  
+  value = data.aws_availability_zones.zones
+
 }
