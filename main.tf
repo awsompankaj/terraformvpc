@@ -11,7 +11,7 @@ resource "aws_vpc" "myvpc" {
 resource "aws_subnet" "private01" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = data.aws_availability_zones.zones.names[0]
 
   tags = {
     Name = "private01"
@@ -20,7 +20,7 @@ resource "aws_subnet" "private01" {
 resource "aws_subnet" "private02" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.2.0/24"
-  availability_zone = "us-east-1b"
+  availability_zone = data.aws_availability_zones.zones.names[1]
 
   tags = {
     Name = "private02"
@@ -29,7 +29,7 @@ resource "aws_subnet" "private02" {
 resource "aws_subnet" "private03" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.3.0/24"
-  availability_zone = "us-east-1c"
+  availability_zone = data.aws_availability_zones.zones.names[2]
 
   tags = {
     Name = "private03"
@@ -41,7 +41,7 @@ resource "aws_subnet" "private03" {
 resource "aws_subnet" "public01" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.101.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = data.aws_availability_zones.zones.names[0]
 
   tags = {
     Name = "public01"
@@ -50,7 +50,7 @@ resource "aws_subnet" "public01" {
 resource "aws_subnet" "public02" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.102.0/24"
-  availability_zone = "us-east-1b"
+  availability_zone = data.aws_availability_zones.zones.names[1]
 
   tags = {
     Name = "public02"
@@ -59,7 +59,7 @@ resource "aws_subnet" "public02" {
 resource "aws_subnet" "public03" {
   vpc_id     = aws_vpc.myvpc.id
   cidr_block = "10.0.103.0/24"
-  availability_zone = "us-east-1c"
+  availability_zone = data.aws_availability_zones.zones.names[2]
 
   tags = {
     Name = "public03"
